@@ -2,17 +2,20 @@ import math
 import pygame
 from random import randint
 import sys
+import json
 
 pygame.init()
-info_ecran = pygame.display.Info()
-W = info_ecran.current_w
-H = info_ecran.current_h
-print(W,H)
+with open("settings.json", "r") as f:
+    settings = json.load(f)
+volume = settings.get("volume", 1.0)
+W, H = map(int, settings.get("fullscreen", f"{pygame.display.Info().current_w},{pygame.display.Info().current_h}").split(","))
+
 screen = pygame.display.set_mode((W, H), pygame.FULLSCREEN)
 pygame.display.set_caption("az")
 clock = pygame.time.Clock()
 pygame.mixer.music.load("Menu.mp3")
 pygame.mixer.music.play(-1)  
+pygame.mixer.music.set_volume(volume)
 FPS = 60
 
 #Police
