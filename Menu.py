@@ -1,11 +1,12 @@
 import pygame
 import sys
 import subprocess
+import json
 pygame.init()
 
 
 #Promis je documente cette fois                         #J'ai oublié a la fin de documenter, mais c'est pas grave, c'est pas comme si c'était important de comprendre le code du truc que tu code :/
-import json
+
 
 with open("settings.json", "r") as f:
     settings = json.load(f)
@@ -26,6 +27,7 @@ background = pygame.transform.scale(background,(W,H))
 #MUSIQUE FELICITE MOI LOUIS J'AI TROUVE
 pygame.mixer.music.load("Music/Menu.mp3")
 pygame.mixer.music.play(-1)  #Boucle infinie
+pygame.mixer.music.set_volume(volume)
 
 #Couleurs
 WHITE = (255,255,255)
@@ -97,8 +99,8 @@ while running:
     mouse_pos = pygame.mouse.get_pos()
     mouse_pressed = pygame.mouse.get_pressed()
 
-    title = font_title.render("Timeo Fight",True,WHITE)
-    shadow = font_title.render("Timeo Fight",True,SHADOW)
+    title = font_title.render("Jeu ?",True,WHITE)
+    shadow = font_title.render("Jeu ?",True,SHADOW)
     screen.blit(shadow,(W//2 - title.get_width()//2 + 3,H//10 - 3))
     screen.blit(title,(W//2 - title.get_width()//2,H//10))
 

@@ -13,45 +13,45 @@ W, H = map(int, settings.get("fullscreen", f"{pygame.display.Info().current_w},{
 screen = pygame.display.set_mode((W, H), pygame.FULLSCREEN)
 pygame.display.set_caption("az")
 clock = pygame.time.Clock()
-pygame.mixer.music.load("Menu.mp3")
+pygame.mixer.music.load("Music/Menu.mp3")
 pygame.mixer.music.play(-1)  
 pygame.mixer.music.set_volume(volume)
 FPS = 60
 
 #Police
 try:
-    font_title = pygame.font.Font("Pixel.ttf", 144)
-    font_button = pygame.font.Font("Pixel.ttf", 72)
+    font_title = pygame.font.Font("Police/Pixel.ttf", 144)
+    font_button = pygame.font.Font("Police/Pixel.ttf", 72)
 except:
     font_title = pygame.font.SysFont(None, 144)
     font_button = pygame.font.SysFont(None, 72)
 
-fireball_sprite = pygame.image.load("Boule de feu.png")
+fireball_sprite = pygame.image.load("Sprite/Boule de feu.png")
 fireball_sprite = pygame.transform.scale(fireball_sprite, (40,40))
 fireball_sprite = pygame.transform.rotate(fireball_sprite, 180)
 fireball_sprite.convert_alpha()
 is_fireball_rotated = False
-img_player_idle = pygame.image.load("player_idle.png")
+img_player_idle = pygame.image.load("Sprite/player_idle.png")
 img_player_idle = pygame.transform.scale(img_player_idle, (80,160))
 img_player_idle.convert_alpha()
-img_player_left = pygame.image.load("player_left.png")
+img_player_left = pygame.image.load("Sprite/player_left.png")
 img_player_left = pygame.transform.scale(img_player_left, (80,160))
 img_player_left.convert_alpha()
-img_player_right = pygame.image.load("player_right.png")
+img_player_right = pygame.image.load("Sprite/player_right.png")
 img_player_right = pygame.transform.scale(img_player_right, (80,160))
 img_player_right.convert_alpha()
-img_player_jump = pygame.image.load("player_jumping.png")
+img_player_jump = pygame.image.load("Sprite/player_jumping.png")
 img_player_jump = pygame.transform.scale(img_player_jump, (80,160))
 img_player_jump.convert_alpha()
-img_sprite_boss = pygame.image.load("Sprite boss.png")
+img_sprite_boss = pygame.image.load("Sprite/Sprite boss.png")
 img_sprite_boss = pygame.transform.scale(img_sprite_boss, (240,240))
 img_sprite_boss.convert_alpha()
-arrow_sprite = pygame.image.load("Player arrow new.png")
+arrow_sprite = pygame.image.load("Sprite/Player arrow new.png")
 arrow_sprite = pygame.transform.scale(arrow_sprite, (160,160))
 arrow_sprite.convert_alpha()
-background = pygame.image.load("background.jpg")
+background = pygame.image.load("Sprite/background.jpg")
 background = pygame.transform.scale(background, (W,H))  
-img_consumable = pygame.image.load("consomable.png")
+img_consumable = pygame.image.load("Sprite/consomable.png")
 img_consumable = pygame.transform.scale(img_consumable, (40,40))    
 
 noir = (0, 0, 0)
@@ -462,8 +462,8 @@ def update_game():
     if boss.health <= 0:
         print("You Win!")
         pygame.draw.rect(screen, vert, (0, 0, W, H))  # Écran vert pour la victoire
-        title = font_title.render("Timeo Fight, You WON !",True,blanc)
-        shadow = font_title.render("Timeo Fight, You WON !",True,noir)
+        title = font_title.render("Jeu ?, You WON !",True,blanc)
+        shadow = font_title.render("Jeu ?, You WON !",True,noir)
         screen.blit(shadow,(W//2 - title.get_width()//2 + 3,103))
         screen.blit(title,(W//2 - title.get_width()//2,100))
         wait_time = pygame.time.get_ticks() + 2000  # Affiche l'écran de victoire pendant 2 secondes
