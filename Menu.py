@@ -5,17 +5,26 @@ pygame.init()
 
 
 #Promis je documente cette fois                         #J'ai oublié a la fin de documenter, mais c'est pas grave, c'est pas comme si c'était important de comprendre le code du truc que tu code :/
-info_ecran = pygame.display.Info()
-W,H = info_ecran.current_w, info_ecran.current_h
-screen = pygame.display.set_mode((W,H))
+import json
+
+with open("settings.json", "r") as f:
+    settings = json.load(f)
+volume = settings.get("volume", 1.0)
+W, H = map(int, settings.get("fullscreen", f"{pygame.display.Info().current_w},{pygame.display.Info().current_h}").split(","))
+
+# keep a reference resolution for scaling
+ref_W, ref_H = W, H
+
+# allow the window to be resizable so we can react to manual changes if needed
+screen = pygame.display.set_mode((W, H), pygame.RESIZABLE)
 pygame.display.set_caption("Menu")
 
 #Ecran menu
-background = pygame.image.load("Menu.png")
+background = pygame.image.load("Sprite/Menu.png")
 background = pygame.transform.scale(background,(W,H))
 
 #MUSIQUE FELICITE MOI LOUIS J'AI TROUVE
-pygame.mixer.music.load("Menu.mp3")
+pygame.mixer.music.load("Music/Menu.mp3")
 pygame.mixer.music.play(-1)  #Boucle infinie
 
 #Couleurs
@@ -27,26 +36,41 @@ NOIR = (0,0,0)
 
 #Police
 try:
-    font_title = pygame.font.Font("Pixel.ttf", 144)
-    font_button = pygame.font.Font("Pixel.ttf", 72)
+    font_title = pygame.font.Font("Police/Pixel.ttf", 144)
+    font_button = pygame.font.Font("Police/Pixel.ttf", 72)
 except:
     font_title = pygame.font.SysFont(None, 144)
     font_button = pygame.font.SysFont(None, 72)
 
 class Button:
-    def __init__(self,text,center_y,action):
+    def __init__(self, text, center_y, action):
         self.text = text
         self.action = action
-        self.center_y = center_y
-        self.width,self.height = 640,140
-        self.rect = pygame.Rect(0,0,self.width,self.height)
-        self.rect.center = (W//2,self.center_y)
+        # store a base vertical position in pixels relative to reference height
+        if center_y <= 1:
+            # center_y given as a ratio; convert to pixel for base
+            self.base_center_y = center_y * ref_H
+        else:
+            # direct pixel position
+            self.base_center_y = center_y
 
-    def draw(self,win,mouse_pos):
+        self.base_width = 640
+        self.base_height = 140
+        self.update()
+
+    def update(self):
+        # recompute dimensions/position when window size changes
+        self.width = self.base_width * W / ref_W
+        self.height = self.base_height * H / ref_H
+        self.rect = pygame.Rect(0, 0, self.width, self.height)
+        # scale vertical position from the stored base value
+        self.rect.center = (W // 2, int(self.base_center_y * H / ref_H))
+
+    def draw(self, win, mouse_pos):
         is_over = self.rect.collidepoint(mouse_pos)
         color = HOWER_BLUE if is_over else TRANSLUCENT_BLUE   #change la couleur si on passe le boutton dessus
-        button_surface = pygame.Surface((self.width,self.height),pygame.SRCALPHA)
-        pygame.draw.rect(button_surface,color,(0,0,self.width,self.height),border_radius=16)
+        button_surface = pygame.Surface((self.rect.width,self.rect.height),pygame.SRCALPHA)
+        pygame.draw.rect(button_surface,color,(0,0,self.rect.width,self.rect.height),border_radius=16)
         win.blit(button_surface,self.rect)
         text_surf = font_button.render(self.text,True,WHITE)
         text_rect = text_surf.get_rect(center=self.rect.center)
@@ -59,9 +83,9 @@ class Button:
     
 #Liste bouton
 buttons = [
-    Button("Jouer",720,"new"),
-    Button("Options",880,"options"),
-    Button("Quitter",1040,"quit")
+    Button("Jouer", 0.35, "new"),
+    Button("Options", 0.6, "options"),
+    Button("Quitter", 0.85, "quit")
 ]
 
 running = True
@@ -75,8 +99,8 @@ while running:
 
     title = font_title.render("Timeo Fight",True,WHITE)
     shadow = font_title.render("Timeo Fight",True,SHADOW)
-    screen.blit(shadow,(W//2 - title.get_width()//2 + 3,103))
-    screen.blit(title,(W//2 - title.get_width()//2,100))
+    screen.blit(shadow,(W//2 - title.get_width()//2 + 3,H//10 - 3))
+    screen.blit(title,(W//2 - title.get_width()//2,H//10))
 
     for btn in buttons:
         btn.draw(screen,mouse_pos)
@@ -98,6 +122,13 @@ while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
+        elif event.type == pygame.VIDEORESIZE:
+            # support manual resizing
+            W, H = event.w, event.h
+            screen = pygame.display.set_mode((W, H), pygame.RESIZABLE)
+            background = pygame.transform.scale(pygame.image.load("Sprite/Menu.png"),(W,H))
+            for btn in buttons:
+                btn.update()
 
     pygame.display.flip()
 pygame.quit()
