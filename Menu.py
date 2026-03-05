@@ -4,7 +4,7 @@ import subprocess
 pygame.init()
 
 
-#Promis je documente cette fois 
+#Promis je documente cette fois                         #J'ai oublié a la fin de documenter, mais c'est pas grave, c'est pas comme si c'était important de comprendre le code du truc que tu code :/
 info_ecran = pygame.display.Info()
 W,H = info_ecran.current_w, info_ecran.current_h
 screen = pygame.display.set_mode((W,H))
@@ -23,6 +23,7 @@ WHITE = (255,255,255)
 TRANSLUCENT_BLUE = (0,80,200,180)
 HOWER_BLUE = (0,140,255,220)
 SHADOW = (0,0,0)
+NOIR = (0,0,0)
 
 #Police
 try:
