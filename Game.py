@@ -379,9 +379,9 @@ def boss_spikes():
     if boss_cool.b_attack <= 0 and phase_boss == 1:
         for i in range(1, 100):
             if i % 2 == 0:
-                new_spike = entity(boss.pos_x + (40 * i), boss.pos_y + 50*i, 20, 200, 1, 0, 0, 1)
+                new_spike = entity(boss.pos_x + (40 * i), boss.pos_y + 50*i, 40, 400, 1, 0, 0, 1)
             else:
-                new_spike = entity(boss.pos_x - (40 * i), boss.pos_y + 50*i, 20, 200, 1, 0, 0, 1)
+                new_spike = entity(boss.pos_x - (40 * i), boss.pos_y + 50*i, 40, 400, 1, 0, 0, 1)
             list_spike.append(new_spike)
             boss_cool.b_attack = randint(500, 700)
     for spike in list_spike:
@@ -389,7 +389,7 @@ def boss_spikes():
             spike.pos_y -= 6
         else:
             spike.pos_y += 6
-        if spike.pos_y < H - 200:
+        if spike.pos_y < H - 300:
             spike.g = 0
         if hitbox(player, spike) == True:
             player.health = player.health - 10
