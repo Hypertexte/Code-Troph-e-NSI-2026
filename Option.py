@@ -16,6 +16,10 @@ logical_screen = pygame.Surface((LOG_W, LOG_H))
 pygame.display.set_caption("Options")
 background = pygame.image.load("Sprite/Menu.png")
 background = pygame.transform.scale(background, (LOG_W, LOG_H))
+arrows_on = pygame.image.load("Sprite/arrows_keys.png")
+arrows_on = pygame.transform.scale(arrows_on,(400,400))
+zqsd = pygame.image.load("Sprite/ZQSD.png")
+zqsd = pygame.transform.scale(zqsd,(400,400))
 
 # musique
 pygame.mixer.music.load("Music/Menu.mp3")
@@ -28,7 +32,7 @@ TRANSLUCENT_BLUE = (0, 80, 200, 180)
 HOWER_BLUE = (0, 140, 255, 220)
 SHADOW = (0, 0, 0)
 
-
+keys = "zqsd"      #True mean ZQSD, False means arrows
 # affichage
 try:
     font_title = pygame.font.Font("Police/Pixel.ttf", 144)
@@ -68,7 +72,10 @@ class Button:
         return self.rect.collidepoint(mouse_pos) and mouse_pressed[0]
 
 
-buttons = [Button("Volume up", 0.4, "change_volume_up"),Button("Volume down", 0.6, "change_volume_down"),Button("Retour au menu", 0.8, "quit")]
+buttons = [Button("Volume up", 0.4, "change_volume_up"),
+           Button("Volume down", 0.55, "change_volume_down"),
+           Button("Retour au menu", 0.7, "quit"),
+           Button("Changement des touches",0.85,"change_keys")]
 
 running = True
 clock = pygame.time.Clock()
@@ -87,6 +94,13 @@ while running:
     logical_screen.blit(shadow, (LOG_W // 2 - title.get_width() // 2 + 3, 103))
     logical_screen.blit(title, (LOG_W // 2 - title.get_width() // 2, 100))
 
+    if keys == "zqsd":
+        keys_image=zqsd
+    else:
+        keys_image=arrows_on
+    logical_screen.blit(keys_image,(0,0))
+
+
     for btn in buttons:
         btn.draw(logical_screen, logical_mouse_pos)
         if btn.is_click(logical_mouse_pos, mouse_pressed):
@@ -97,10 +111,17 @@ while running:
             elif btn.action == "change_volume_down":
                 pygame.mixer.music.set_volume(max(pygame.mixer.music.get_volume() - 0.3, 0.0))
                 settings["volume"] = pygame.mixer.music.get_volume()
+            elif btn.action == "change_keys":
+                if keys == "zqsd":
+                    keys = "arrows"
+                    settings["Keys"] = keys
+                else :
+                    keys = "zqsd"
+                    settings["Keys"] = keys
             elif btn.action == "quit":
                 with open("settings.json", "w") as f:
-                    json.dump(settings, f)
-                pygame.quit()
+                    json.dump(settings,f)
+                pygame.quit() 
                 subprocess.run(["python", "Menu.py"])
                 sys.exit()
 

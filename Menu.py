@@ -13,10 +13,8 @@ with open("settings.json", "r") as f:
 volume = settings.get("volume", 1.0)
 W, H = map(int, settings.get("fullscreen", f"{pygame.display.Info().current_w},{pygame.display.Info().current_h}").split(","))
 
-# keep a reference resolution for scaling
 ref_W, ref_H = W, H
 
-# allow the window to be resizable so we can react to manual changes if needed
 screen = pygame.display.set_mode((W, H), pygame.RESIZABLE)
 pygame.display.set_caption("Menu")
 
@@ -48,12 +46,9 @@ class Button:
     def __init__(self, text, center_y, action):
         self.text = text
         self.action = action
-        # store a base vertical position in pixels relative to reference height
         if center_y <= 1:
-            # center_y given as a ratio; convert to pixel for base
             self.base_center_y = center_y * ref_H
         else:
-            # direct pixel position
             self.base_center_y = center_y
 
         self.base_width = 640
@@ -61,11 +56,11 @@ class Button:
         self.update()
 
     def update(self):
-        # recompute dimensions/position when window size changes
+#ajustela taille de la fenetre
         self.width = self.base_width * W / ref_W
         self.height = self.base_height * H / ref_H
         self.rect = pygame.Rect(0, 0, self.width, self.height)
-        # scale vertical position from the stored base value
+        # scale 
         self.rect.center = (W // 2, int(self.base_center_y * H / ref_H))
 
     def draw(self, win, mouse_pos):

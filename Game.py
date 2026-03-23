@@ -10,6 +10,7 @@ pygame.mixer.init()
 with open("settings.json", "r") as f:
     settings = json.load(f)
 volume = settings.get("volume", 1.0)
+keys_setting = settings.get("Keys")
 
 #auto scale
 info_ecran = pygame.display.Info()
@@ -70,6 +71,9 @@ background = pygame.transform.scale(background, (LOG_W, LOG_H))
 img_consumable = pygame.image.load("Sprite/consomable.png")
 img_consumable = pygame.transform.scale(img_consumable, (40, 40))
 
+img_plateforme = pygame.image.load("Sprite/Plateforme.png")
+img_plateforme = pygame.transform.scale(img_plateforme, (200,100))
+
 #couleur
 noir = (0, 0, 0)
 bleue = (50, 50, 150)
@@ -77,9 +81,10 @@ blanc = (255, 255, 255)
 rouge = (255, 0, 0)
 vert = (0, 255, 0)
 marron = (33, 33, 33)
+
+
 phase_boss = 1
-
-
+is_in_patern = False
 #class
 class entity:
     def __init__(self, pos_x, pos_y, x, y, g, j, double_j, health):
@@ -248,36 +253,66 @@ def gravity():
         player_cool.jump = 0
 
 def jump(keys):
-    global player_jumping
-    if player.g == 0 and keys[pygame.K_z] and player_cool.jump == 0:
-        player.j = 60
-        player.pos_y = player.pos_y - 40
-        player.double_j = 1
-        player_cool.jump = 1
-        player_jumping = True
-    elif keys[pygame.K_z] and player.g > 0 and player.double_j > 0:
-        player.j = 60
-        player.double_j = player.double_j - 1
-        player_jumping = True
-    else:
-        player_jumping = False
+    global player_jumping,keys_setting
+    if keys_setting == "zqsd":  
+        if player.g == 0 and keys[pygame.K_z] and player_cool.jump == 0:
+            player.j = 60
+            player.pos_y = player.pos_y - 40
+            player.double_j = 1
+            player_cool.jump = 1
+            player_jumping = True
+        elif keys[pygame.K_z] and player.g > 0 and player.double_j > 0:
+            player.j = 60
+            player.double_j = player.double_j - 1
+            player_jumping = True
+        else:
+            player_jumping = False
+    elif keys_setting == "arrows":
+        if player.g == 0 and keys[pygame.K_UP] and player_cool.jump == 0:
+            player.j = 60
+            player.pos_y = player.pos_y - 40
+            player.double_j = 1
+            player_cool.jump = 1
+            player_jumping = True
+        elif keys[pygame.K_UP] and player.g > 0 and player.double_j > 0:
+            player.j = 60
+            player.double_j = player.double_j - 1
+            player_jumping = True
+        else:
+            player_jumping = False
+
+
 
 
 def moove(keys):
     direct = 0
-    global player_moving_left, player_moving_right
-    if keys[pygame.K_d]:
-        player.pos_x += 10
-        direct = 1
-        player_moving_left = True
-    if keys[pygame.K_q]:
-        player.pos_x -= 10
-        direct = -1
-        player_moving_right = True
-    if not keys[pygame.K_d]:
-        player_moving_left = False
-    if not keys[pygame.K_q]:
-        player_moving_right = False
+    global player_moving_left, player_moving_right, keys_setting
+    if keys_setting == "zqsd":
+        if keys[pygame.K_d]:
+            player.pos_x += 10
+            direct = 1
+            player_moving_left = True
+        if keys[pygame.K_q]:
+            player.pos_x -= 10
+            direct = -1
+            player_moving_right = True
+        if not keys[pygame.K_d]:
+            player_moving_left = False
+        if not keys[pygame.K_q]:
+            player_moving_right = False
+    elif keys_setting == "arrows":
+        if keys[pygame.K_RIGHT]:
+            player.pos_x += 10
+            direct = 1
+            player_moving_left = True
+        if keys[pygame.K_LEFT]:
+            player.pos_x -= 10
+            direct = -1
+            player_moving_right = True
+        if not keys[pygame.K_RIGHT]:
+            player_moving_left = False
+        if not keys[pygame.K_LEFT]:
+            player_moving_right = False
 
     if keys[pygame.K_LSHIFT] and player_cool.dash == 0:
         player.pos_x = player.pos_x + 100 * direct
@@ -330,6 +365,28 @@ def boss_fireball():
             if ball.pos_y > LOG_H:
                 list_fireball.remove(ball)
 
+def boss_charge(keys):                      #Le boss charge le joueur
+    if phase_boss == 1:
+        if keys[pygame.K_p]:    <  #Valeur aleatoire pour pouvoir enchainer le patern ou qu'il soit espacé / Touche P pour trigger le patern    
+            is_in_patern = True                 #Si False, le boss retournera au dessus du joueur
+            if boss.pos_x < info_ecran.current_w //2:       #On regarde si le boss va de gauche a droite ou l'inverse
+                while boss.pos_x != info_ecran.current_w - 15:      #on le fait glisser a l'autre bout de la map
+                    boss.pos_x += 3
+                while boss.pos_y != player.pos_y :                  #Il descend a hauteur du joueur
+                    boss.pos_y += 3   
+                if boss.pos_x != 10:                            #Il charge le long de la map en horizontal
+                   boss.pos_x -= 4      
+                is_in_patern = False                    #On reactive les mouvements autres
+            else:
+                while boss.pos_x != 10:
+                    boss.pos_x -= 3
+                while boss.pos_y != player.pos_y :
+                    boss.pos_y += 3   
+                if boss.pos_x != info_ecran.current_w-10:
+                   boss.pos_x += 4
+                is_in_patern = False
+                
+#nombre de crash :4
 
 def change_phase():
     global phase_boss, is_fireball_rotated, fireball_sprite
@@ -351,7 +408,11 @@ def detection_joueur():
 
 def phase_vol():
     if phase_boss == 2:
-        boss.pos_y = 100
+        if boss.pos_y != 100:
+            if boss.pos_y > 100:
+                boss.pos_y -= 10
+            else:
+                boss.pos_y += 10
 
 
 def player_arrow_2():
@@ -363,32 +424,34 @@ def player_arrow_2():
 
 
 def deplacement_boss():
-    if phase_boss == 1:
-        if detection_joueur() == True:
-            boss.pos_x -= 4
-        else:
-            boss.pos_x += 4
-    if phase_boss == 2:
-        if detection_joueur() == True:
-            boss.pos_x += 24
-        else:
-            boss.pos_x -= 24
+    if is_in_patern == False:  
+        if phase_boss == 1:
+            if detection_joueur() == True:
+                boss.pos_x -= 4
+            else:
+                boss.pos_x += 4
+        if phase_boss == 2:
+            if boss.pos_x != player.pos_x:
+                if boss.pos_x > player.pos_x:
+                    boss.pos_x -= 5
+                else:
+                    boss.pos_x += 5
 
 
 def boss_spikes():
     if boss_cool.b_attack <= 0 and phase_boss == 1:
         for i in range(1, 100):
             if i % 2 == 0:
-                new_spike = entity(boss.pos_x + (40 * i), boss.pos_y + 50*i, 40, 400, 1, 0, 0, 1)
+                new_spike = entity(boss.pos_x + (40 * i), boss.pos_y + 50*i, 40, 300, 1, 0, 0, 1)
             else:
-                new_spike = entity(boss.pos_x - (40 * i), boss.pos_y + 50*i, 40, 400, 1, 0, 0, 1)
+                new_spike = entity(boss.pos_x - (40 * i), boss.pos_y + 50*i, 40, 300, 1, 0, 0, 1)
             list_spike.append(new_spike)
             boss_cool.b_attack = randint(500, 700)
     for spike in list_spike:
         if spike.g == 1:
-            spike.pos_y -= 6
+            spike.pos_y -= 12
         else:
-            spike.pos_y += 6
+            spike.pos_y += 12
         if spike.pos_y < H - 300:
             spike.g = 0
         if hitbox(player, spike) == True:
@@ -502,6 +565,7 @@ def update_game():
     boss_spikes()
     consumable()
     player_arrow_2()
+    boss_charge(keys)
 
     if player.health <= 0:
         print("Game Over")
@@ -509,7 +573,7 @@ def update_game():
         sys.exit()
     if boss.health <= 0:
         print("You Win!")
-        pygame.draw.rect(screen, vert, (0, 0, W, H))
+        pygame.draw.rect(screen, marron, (0, 0, W, H))
         title = font_title.render("Jeu ?, You WON !", True, blanc)
         shadow = font_title.render("Jeu ?, You WON !", True, noir)
         screen.blit(shadow, (W // 2 - title.get_width() // 2 + 3, 103))
