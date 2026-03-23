@@ -27,7 +27,7 @@ pygame.mixer.music.play(-1)
 pygame.mixer.music.set_volume(volume)
 FPS = 60
 
-#sprite /  texte
+#sprite / texte
 try:
     font_title = pygame.font.Font("Police/Pixel.ttf", 144)
     font_button = pygame.font.Font("Police/Pixel.ttf", 72)
@@ -72,7 +72,7 @@ img_consumable = pygame.image.load("Sprite/consomable.png")
 img_consumable = pygame.transform.scale(img_consumable, (40, 40))
 
 img_plateforme = pygame.image.load("Sprite/Plateforme.png")
-img_plateforme = pygame.transform.scale(img_plateforme, (200,100))
+img_plateforme = pygame.transform.scale(img_plateforme, (200, 100))
 
 #couleur
 noir = (0, 0, 0)
@@ -82,9 +82,14 @@ rouge = (255, 0, 0)
 vert = (0, 255, 0)
 marron = (33, 33, 33)
 
-
 phase_boss = 1
 is_in_patern = False
+
+# Variables pour boss_charge (machine à états)
+boss_charge_state = "idle"   # "idle", "reposition", "descend", "charge"
+boss_charge_direction = 0
+
+
 #class
 class entity:
     def __init__(self, pos_x, pos_y, x, y, g, j, double_j, health):
@@ -179,7 +184,6 @@ def debug(a):
         a.pos_x = LOG_W - 40 - a.x
 
 
-
 #player
 def player_arrow(keys):
     x, y = get_mouse_pos()
@@ -208,16 +212,20 @@ def player_arrow(keys):
     if player_cool.a_attack > 0:
         player_cool.a_attack -= 1
 
-    for arrow in list_arrow:
+    # CORRECTION : itération sur une copie avec [:] pour éviter les crashs lors de la suppression
+    for arrow in list_arrow[:]:
         if arrow.pos_y + arrow.y < floor_limit and not hitbox(arrow, plat):
             arrow.g += gravity
             arrow.pos_x += arrow.j
             arrow.pos_y += arrow.g
         else:
-            list_arrow.remove(arrow)
+            if arrow in list_arrow:
+                list_arrow.remove(arrow)
+            continue
         if hitbox(arrow, boss):
-            list_arrow.remove(arrow)
-            boss.health = boss.health - 100
+            if arrow in list_arrow:
+                list_arrow.remove(arrow)
+            boss.health -= 100
 
 def temp_plat(keys):
     if keys[pygame.K_s] and player_cool.plat == 0:
@@ -253,8 +261,8 @@ def gravity():
         player_cool.jump = 0
 
 def jump(keys):
-    global player_jumping,keys_setting
-    if keys_setting == "zqsd":  
+    global player_jumping, keys_setting
+    if keys_setting == "zqsd":
         if player.g == 0 and keys[pygame.K_z] and player_cool.jump == 0:
             player.j = 60
             player.pos_y = player.pos_y - 40
@@ -280,8 +288,6 @@ def jump(keys):
             player_jumping = True
         else:
             player_jumping = False
-
-
 
 
 def moove(keys):
@@ -322,7 +328,6 @@ def moove(keys):
         player_cool.dash = player_cool.dash - 1
 
 
-
 #boss
 def boss_gravity():
     floor_limit = LOG_H - 10
@@ -342,55 +347,79 @@ def boss_fireball():
         boss_cool.a_attack = randint(20, 80)
     if boss_cool.a_attack > 0:
         boss_cool.a_attack -= 1
+
     if phase_boss == 1:
         for ball in list_fireball[:]:
-            if detection_joueur() == True:
-                ball.pos_x += 12
-            else:
+            # CORRECTION : direction corrigée — la boule va vers le joueur
+            if detection_joueur() == False:  # joueur à gauche du boss → boule va à gauche
                 ball.pos_x -= 12
-            if hitbox(player, ball) == True:
-                player.health = player.health - 10
+            else:                            # joueur à droite du boss → boule va à droite
+                ball.pos_x += 12
+            if hitbox(player, ball):
+                player.health -= 10
                 list_fireball.remove(ball)
                 continue
-            if ball.pos_x < -10:
+            if ball.pos_x < -10 or ball.pos_x > LOG_W + 10:
                 list_fireball.remove(ball)
 
     if phase_boss == 2:
         for ball in list_fireball[:]:
             ball.pos_y += 12
-            if hitbox(player, ball) == True:
-                player.health = player.health - 10
+            if hitbox(player, ball):
+                player.health -= 10
                 list_fireball.remove(ball)
                 continue
             if ball.pos_y > LOG_H:
                 list_fireball.remove(ball)
 
-def boss_charge(keys):                      #Le boss charge le joueur
-    if phase_boss == 1:
-        if keys[pygame.K_p]:    <  #Valeur aleatoire pour pouvoir enchainer le patern ou qu'il soit espacé / Touche P pour trigger le patern    
-            is_in_patern = True                 #Si False, le boss retournera au dessus du joueur
-            if boss.pos_x < info_ecran.current_w //2:       #On regarde si le boss va de gauche a droite ou l'inverse
-                while boss.pos_x != info_ecran.current_w - 15:      #on le fait glisser a l'autre bout de la map
-                    boss.pos_x += 3
-                while boss.pos_y != player.pos_y :                  #Il descend a hauteur du joueur
-                    boss.pos_y += 3   
-                if boss.pos_x != 10:                            #Il charge le long de la map en horizontal
-                   boss.pos_x -= 4      
-                is_in_patern = False                    #On reactive les mouvements autres
-            else:
-                while boss.pos_x != 10:
-                    boss.pos_x -= 3
-                while boss.pos_y != player.pos_y :
-                    boss.pos_y += 3   
-                if boss.pos_x != info_ecran.current_w-10:
-                   boss.pos_x += 4
-                is_in_patern = False
-                
-#nombre de crash :4
 
+# CORRECTION : boss_charge réécrit avec une machine à états (plus de while bloquants)
+def boss_charge(keys):
+    global boss_charge_state, boss_charge_direction, is_in_patern
+
+    if phase_boss != 1:
+        return
+
+    # Déclenchement du pattern avec P
+    if keys[pygame.K_p] and boss_charge_state == "idle":
+        boss_charge_state = "reposition"
+        is_in_patern = True
+        boss_charge_direction = 1 if boss.pos_x < LOG_W // 2 else -1
+
+    # Étape 1 : le boss se déplace vers le bord opposé
+    if boss_charge_state == "reposition":
+        target_x = LOG_W - 15 if boss_charge_direction == 1 else 10
+        if abs(boss.pos_x - target_x) > 3:
+            boss.pos_x += 3 * boss_charge_direction
+        else:
+            boss.pos_x = target_x
+            boss_charge_state = "descend"
+
+    # Étape 2 : le boss descend à hauteur du joueur
+    elif boss_charge_state == "descend":
+        if abs(boss.pos_y - player.pos_y) > 3:
+            boss.pos_y += 3 if boss.pos_y < player.pos_y else -3
+        else:
+            boss.pos_y = player.pos_y
+            boss_charge_state = "charge"
+
+    # Étape 3 : le boss charge horizontalement vers l'autre bord
+    elif boss_charge_state == "charge":
+        boss.pos_x -= 4 * boss_charge_direction
+        target_end = 10 if boss_charge_direction == 1 else LOG_W - 10
+        if abs(boss.pos_x - target_end) < 10:
+            boss_charge_state = "idle"
+            is_in_patern = False
+
+        # Dégâts au joueur pendant la charge
+        if hitbox(player, boss):
+            player.health -= 10
+
+
+# CORRECTION : condition corrigée (> 500 au lieu de == 1000)
 def change_phase():
     global phase_boss, is_fireball_rotated, fireball_sprite
-    if boss.health == 1000:
+    if boss.health > 500:
         phase_boss = 1
     elif boss.health <= 500:
         if not is_fireball_rotated:
@@ -424,7 +453,8 @@ def player_arrow_2():
 
 
 def deplacement_boss():
-    if is_in_patern == False:  
+    global is_in_patern  # CORRECTION : global manquant
+    if is_in_patern == False:
         if phase_boss == 1:
             if detection_joueur() == True:
                 boss.pos_x -= 4
@@ -442,55 +472,66 @@ def boss_spikes():
     if boss_cool.b_attack <= 0 and phase_boss == 1:
         for i in range(1, 100):
             if i % 2 == 0:
-                new_spike = entity(boss.pos_x + (40 * i), boss.pos_y + 50*i, 40, 300, 1, 0, 0, 1)
+                new_spike = entity(boss.pos_x + (40 * i), boss.pos_y + 50 * i, 40, 300, 1, 0, 0, 1)
             else:
-                new_spike = entity(boss.pos_x - (40 * i), boss.pos_y + 50*i, 40, 300, 1, 0, 0, 1)
+                new_spike = entity(boss.pos_x - (40 * i), boss.pos_y + 50 * i, 40, 300, 1, 0, 0, 1)
             list_spike.append(new_spike)
-            boss_cool.b_attack = randint(500, 700)
-    for spike in list_spike:
+        boss_cool.b_attack = randint(500, 700)
+
+    # CORRECTION : itération sur une copie avec [:] + condition de suppression corrigée
+    for spike in list_spike[:]:
         if spike.g == 1:
             spike.pos_y -= 12
         else:
             spike.pos_y += 12
-        if spike.pos_y < H - 300:
+        if spike.pos_y < LOG_H - 300:
             spike.g = 0
-        if hitbox(player, spike) == True:
-            player.health = player.health - 10
+        if hitbox(player, spike):
+            player.health -= 10
             list_spike.remove(spike)
-        if boss.pos_y > 2*H:
+            continue
+        if spike.pos_y > LOG_H + 50:  # CORRECTION : condition logique (LOG_H au lieu de 2*H)
             list_spike.remove(spike)
+
     if boss_cool.b_attack > 0:
         boss_cool.b_attack -= 1
 
 
 def consumable():
+    global double_arrow, double_arrow_timer
+
     if consumable_cool.a_attack <= 0:
         new_consumable = entity(randint(10, LOG_W - 40), 0, 40, 40, 0, 0, 0, 1)
         list_consumable.append(new_consumable)
         consumable_cool.a_attack = randint(1200, 3600)
     if consumable_cool.a_attack > 0:
         consumable_cool.a_attack -= randint(1, 25)
-    for new_consumable in list_consumable:
+
+    # CORRECTION : boucle séparée avec [:] pour éviter les crashs
+    for new_consumable in list_consumable[:]:
         new_consumable.pos_y += 7
         if hitbox(player, new_consumable):
             list_consumable.remove(new_consumable)
             player.health += 5
+            continue
         floor_limit = LOG_H - 40
         if new_consumable.pos_y + new_consumable.y >= floor_limit:
             list_consumable_fixe.append(new_consumable)
             list_consumable.remove(new_consumable)
-        for new_con in list_consumable_fixe:
-            if hitbox(player, new_con):
-                list_consumable_fixe.remove(new_con)
-                num_con = randint(1, 3)
-                if num_con == 1:
-                    player.health += 20
-                elif num_con == 2:
-                    global double_arrow, double_arrow_timer
-                    double_arrow = True
-                    double_arrow_timer = 180
-                elif num_con == 3:
-                    boss.health -= 100
+
+    # CORRECTION : boucle séparée (plus imbriquée dans la précédente)
+    for new_con in list_consumable_fixe[:]:
+        if hitbox(player, new_con):
+            list_consumable_fixe.remove(new_con)
+            num_con = randint(1, 3)
+            if num_con == 1:
+                player.health += 20
+            elif num_con == 2:
+                double_arrow = True
+                double_arrow_timer = 180
+            elif num_con == 3:
+                boss.health -= 100
+
 
 def draw_game():
     global img_sprite_boss
