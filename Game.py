@@ -377,7 +377,7 @@ def boss_fireball():
 def boss_charge(keys):
     global boss_charge_state, boss_charge_direction, is_in_patern
 
-    if phase_boss != 1:
+    if phase_boss != 2:
         return
 
     # Déclenchement du pattern avec P
@@ -388,26 +388,26 @@ def boss_charge(keys):
 
     # Étape 1 : le boss se déplace vers le bord opposé
     if boss_charge_state == "reposition":
-        target_x = LOG_W - 15 if boss_charge_direction == 1 else 10
-        if abs(boss.pos_x - target_x) > 3:
-            boss.pos_x += 3 * boss_charge_direction
+        target_x = LOG_W - 30 if boss_charge_direction == 1 else 30
+        if abs(boss.pos_x - target_x) >= 140 :
+            boss.pos_x += 15 * boss_charge_direction
         else:
             boss.pos_x = target_x
             boss_charge_state = "descend"
 
     # Étape 2 : le boss descend à hauteur du joueur
     elif boss_charge_state == "descend":
-        if abs(boss.pos_y - player.pos_y) > 3:
-            boss.pos_y += 3 if boss.pos_y < player.pos_y else -3
+        if abs(boss.pos_y - player.pos_y) >= 50:
+            boss.pos_y += 15 if boss.pos_y < player.pos_y else -3
         else:
-            boss.pos_y = player.pos_y
             boss_charge_state = "charge"
 
     # Étape 3 : le boss charge horizontalement vers l'autre bord
     elif boss_charge_state == "charge":
-        boss.pos_x -= 4 * boss_charge_direction
+        boss.pos_x -= 15 * boss_charge_direction
+        boss.pos_y += 2.5
         target_end = 10 if boss_charge_direction == 1 else LOG_W - 10
-        if abs(boss.pos_x - target_end) < 10:
+        if abs(boss.pos_x - target_end) < 140 :
             boss_charge_state = "idle"
             is_in_patern = False
 
@@ -419,9 +419,9 @@ def boss_charge(keys):
 # CORRECTION : condition corrigée (> 500 au lieu de == 1000)
 def change_phase():
     global phase_boss, is_fireball_rotated, fireball_sprite
-    if boss.health > 500:
+    if boss.health > 800 :
         phase_boss = 1
-    elif boss.health <= 500:
+    elif boss.health <= 800:
         if not is_fireball_rotated:
             is_fireball_rotated = True
             fireball_sprite = pygame.transform.rotate(fireball_sprite, 90)
