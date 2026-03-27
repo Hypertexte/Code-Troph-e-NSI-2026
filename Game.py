@@ -381,7 +381,7 @@ def boss_charge(keys):
         return
 
     # Déclenchement du pattern avec P
-    if keys[pygame.K_p] and boss_charge_state == "idle":
+    if randint(1,360) == 3 and boss_charge_state == "idle":
         boss_charge_state = "reposition"
         is_in_patern = True
         boss_charge_direction = 1 if boss.pos_x < LOG_W // 2 else -1
